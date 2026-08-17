@@ -12,7 +12,7 @@ interface AiJob {
   questionBankId: string;
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   progress?: { current: number; total: number; percent: number };
-  error?: { message: string } | null;
+  error?: { message: string; resolution?: string } | null;
 }
 
 @Component({
@@ -190,7 +190,7 @@ export class DocumentsPage implements OnInit {
 
   private pollJob(jobId: string): void {
     setTimeout(() => this.api.get<AiJob>(`/ai-jobs/${jobId}`).subscribe({
-      next: (job) => { this.activeJob.set(job); if (job.status === 'COMPLETED') { this.success.set('Bộ câu hỏi đã tạo xong. Mở mục Bộ câu hỏi để xem và tạo quiz.'); setTimeout(() => this.activeJob.set(null), 1800); } else if (job.status === 'FAILED') { this.error.set(job.error?.message || 'AI job thất bại.'); this.activeJob.set(null); } else { this.pollJob(jobId); } },
+      next: (job) => { this.activeJob.set(job); if (job.status === 'COMPLETED') { this.success.set('Bộ câu hỏi đã tạo xong. Mở mục Bộ câu hỏi để xem và tạo quiz.'); setTimeout(() => this.activeJob.set(null), 1800); } else if (job.status === 'FAILED') { this.error.set(job.error ? `${job.error.message}${job.error.resolution ? ` ${job.error.resolution}` : ''}` : 'AI job thất bại.'); this.activeJob.set(null); } else { this.pollJob(jobId); } },
       error: (error) => { this.error.set(errorMessage(error)); this.activeJob.set(null); },
     }), 1500);
   }

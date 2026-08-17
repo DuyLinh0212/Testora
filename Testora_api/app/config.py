@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     app_name: str = "Testora API"
     app_env: str = "development"
     api_prefix: str = "/api"
+    app_timezone: str = "Asia/Bangkok"
 
     mongodb_uri: str = "mongodb://localhost:27017"
     mongodb_database: str = "testora"

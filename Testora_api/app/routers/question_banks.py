@@ -8,7 +8,7 @@ from app.errors import AppError
 from app.schemas import GenerationRequest, QuestionCreate, QuestionUpdate, RenameRequest
 from app.services.ai import gemini_service, run_question_generation
 from app.services.parsing import extract_text, parse_questions, validate_imported_questions
-from app.services.plans import consume_ai_quota, get_plan
+from app.services.plans import consume_ai_quota, get_plan, refund_ai_quota
 from app.utils import parse_object_id, serialize, utc_now
 
 
@@ -89,10 +89,10 @@ async def generate_question_bank(
     # knobs must not become a back door to larger generations.
     if not plan["limits"]["advancedGeneration"]:
         payload = GenerationRequest(documentId=payload.documentId)
-    await consume_ai_quota(db, user)
-    now = utc_now()
     bank_id = ObjectId()
     job_id = ObjectId()
+    quota = await consume_ai_quota(db, user, job_id)
+    now = utc_now()
     bank = {
         "_id": bank_id,
         "ownerId": user["_id"],
@@ -118,12 +118,23 @@ async def generate_question_bank(
         "progress": {"current": 0, "total": payload.questionCount, "percent": 0},
         "config": payload.model_dump(exclude={"documentId"}),
         "provider": "gemini" if gemini_service.available else "local-fallback",
+        "quota": {
+            "date": quota["date"],
+            "reservationId": job_id,
+            "refunded": False,
+        },
         "error": None,
         "createdAt": now,
         "completedAt": None,
     }
-    await db.question_banks.insert_one(bank)
-    await db.ai_jobs.insert_one(job)
+    try:
+        await db.question_banks.insert_one(bank)
+        await db.ai_jobs.insert_one(job)
+    except Exception:
+        await db.question_banks.delete_one({"_id": bank_id})
+        await db.ai_jobs.delete_one({"_id": job_id})
+        await refund_ai_quota(db, user["_id"], quota["date"], job_id)
+        raise
     background_tasks.add_task(run_question_generation, db, job_id, bank_id, document_id, payload)
     return serialize({"jobId": job_id, "questionBankId": bank_id, "status": "PENDING"})
 

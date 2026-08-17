@@ -129,7 +129,7 @@ Font giao diện chỉ dùng font hệ thống (`Segoe UI`, `Arial`, `Consolas` 
 ```text
 Testora/
 ├── .github/workflows/ci-cd.yml
-├── scripts/scan_secrets.py
+├── .github/scripts/scan_secrets.py
 ├── Testora_api/
 │   ├── app/
 │   │   ├── routers/

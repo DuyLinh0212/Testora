@@ -16,6 +16,10 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         return throwError(() => error);
       }
       return auth.refresh().pipe(
+        catchError((refreshError) => {
+          auth.clearSession();
+          return throwError(() => refreshError);
+        }),
         switchMap((tokens) => {
           if (!tokens) {
             auth.clearSession();
@@ -25,12 +29,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
             request.clone({ setHeaders: { Authorization: `Bearer ${tokens.accessToken}` } }),
           );
         }),
-        catchError((refreshError) => {
-          auth.clearSession();
-          return throwError(() => refreshError);
-        }),
       );
     }),
   );
 };
-

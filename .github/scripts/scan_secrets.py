@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 SELF = Path(__file__).resolve()
 PLACEHOLDERS = re.compile(
     r"(?i)(example|placeholder|change[-_]?me|replace[-_]?me|your[-_]|dummy|sample|localhost)"

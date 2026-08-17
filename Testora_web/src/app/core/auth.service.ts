@@ -2,7 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpBackend, HttpClient } from '@angular/common/http';
 import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, catchError, finalize, map, of, shareReplay, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Tokens, User } from './models';
 
@@ -17,6 +17,7 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly rawHttp = new HttpClient(inject(HttpBackend));
   private readonly browser = isPlatformBrowser(this.platformId);
+  private refreshInFlight$: Observable<Tokens | null> | null = null;
 
   readonly user = signal<User | null>(null);
   readonly isAuthenticated = computed(() => Boolean(this.accessToken));
@@ -54,14 +55,18 @@ export class AuthService {
   }
 
   refresh(): Observable<Tokens | null> {
+    if (this.refreshInFlight$) return this.refreshInFlight$;
     const refreshToken = this.refreshToken;
     if (!refreshToken) return of<Tokens | null>(null);
-    return this.rawHttp
+    this.refreshInFlight$ = this.rawHttp
       .post<{ tokens: Tokens }>(`${environment.apiUrl}/auth/refresh`, { refreshToken })
       .pipe(
         map((response) => response.tokens),
         tap((tokens) => this.storeTokens(tokens)),
+        finalize(() => (this.refreshInFlight$ = null)),
+        shareReplay({ bufferSize: 1, refCount: false }),
       );
+    return this.refreshInFlight$;
   }
 
   logout(): void {
