@@ -1,0 +1,34 @@
+# Secrets and local configuration
+**/.env
+**/.env.*
+!**/.env.example
+**/*credentials*.env
+**/*.pem
+**/*.key
+
+# Private planning and local QA artifacts
+TESTORA_PLAN.md
+scratch/
+
+# Python
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/*.py[cod]
+**/.coverage
+**/htmlcov/
+Testora_api/uploads/
+
+# Node / Angular
+**/node_modules/
+**/dist/
+**/.angular/
+**/coverage/
+
+# Deployment and editors
+.vercel/
+.idea/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db

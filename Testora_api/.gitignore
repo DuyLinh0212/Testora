@@ -1,0 +1,10 @@
+.env
+atlas-credentials.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+uploads/
+htmlcov/
+.coverage
+
