@@ -18,13 +18,31 @@ def extract_text(content: bytes, filename: str) -> str:
     if extension == ".pdf":
         from pypdf import PdfReader
 
-        reader = PdfReader(io.BytesIO(content))
-        return "\n\n".join((page.extract_text() or "") for page in reader.pages)
+        try:
+            reader = PdfReader(io.BytesIO(content))
+            return "\n\n".join((page.extract_text() or "") for page in reader.pages)
+        except Exception as exc:
+            raise AppError(
+                code="PDF_PARSE_FAILED",
+                message="Không thể đọc cấu trúc PDF này.",
+                status_code=422,
+                resolution="Xuất lại PDF, bỏ mật khẩu mã hóa hoặc OCR tài liệu rồi thử lại.",
+                details={"reason": type(exc).__name__},
+            ) from exc
     if extension == ".docx":
         from docx import Document
 
-        document = Document(io.BytesIO(content))
-        return "\n".join(paragraph.text for paragraph in document.paragraphs)
+        try:
+            document = Document(io.BytesIO(content))
+            return "\n".join(paragraph.text for paragraph in document.paragraphs)
+        except Exception as exc:
+            raise AppError(
+                code="DOCX_PARSE_FAILED",
+                message="Không thể đọc cấu trúc DOCX này.",
+                status_code=422,
+                resolution="Mở và lưu lại tài liệu bằng Word hoặc LibreOffice rồi thử lại.",
+                details={"reason": type(exc).__name__},
+            ) from exc
     raise AppError(
         code="UNSUPPORTED_FILE_TYPE",
         message="Định dạng file chưa được hỗ trợ.",

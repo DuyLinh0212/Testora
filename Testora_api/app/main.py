@@ -74,16 +74,6 @@ async def rate_limit_middleware(request: Request, call_next):
     return await call_next(request)
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["Retry-After"],
-)
-
-
 register_exception_handlers(app)
 
 if settings.storage_backend.lower() == "local":
@@ -107,3 +97,15 @@ async def health() -> dict:
         "storage": settings.storage_backend,
         "aiConfigured": bool(settings.gemini_api_key),
     }
+
+
+# Keep CORS outside ServerErrorMiddleware so unexpected 500 responses remain
+# readable by the frontend instead of being masked as a generic CORS failure.
+app = CORSMiddleware(
+    app=app,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["Retry-After"],
+)

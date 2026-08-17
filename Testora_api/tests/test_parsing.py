@@ -1,4 +1,12 @@
-from app.services.parsing import chunk_text, parse_questions, validate_imported_questions
+import pytest
+
+from app.errors import AppError
+from app.services.parsing import (
+    chunk_text,
+    extract_text,
+    parse_questions,
+    validate_imported_questions,
+)
 
 
 def test_parser_supports_vietnamese_questions_and_answer_key() -> None:
@@ -33,3 +41,10 @@ def test_chunk_text_keeps_overlap_without_infinite_loop() -> None:
     assert "word-90" in chunks[1]
     assert chunks[-1].endswith("word-999")
 
+
+def test_invalid_pdf_returns_actionable_error() -> None:
+    with pytest.raises(AppError) as captured:
+        extract_text(b"not-a-pdf", "lesson.pdf")
+
+    assert captured.value.code == "PDF_PARSE_FAILED"
+    assert captured.value.status_code == 422

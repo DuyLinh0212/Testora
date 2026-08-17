@@ -1,9 +1,11 @@
 import asyncio
 import secrets
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
 from app.config import settings
+from app.errors import AppError
 
 
 class StorageService:
@@ -74,14 +76,26 @@ class StorageService:
             secure=True,
         )
         folder = f"testora/users/{context['user_id']}/documents/{context['document_id']}"
-        result = await asyncio.to_thread(
-            cloudinary.uploader.upload,
-            content,
-            resource_type="raw",
-            folder=folder,
-            public_id=Path(context["original_name"]).stem,
-            overwrite=False,
-        )
+        stream = BytesIO(content)
+        stream.name = context["original_name"]
+        try:
+            result = await asyncio.to_thread(
+                cloudinary.uploader.upload,
+                stream,
+                resource_type="raw",
+                folder=folder,
+                public_id=Path(context["original_name"]).stem,
+                overwrite=False,
+            )
+        except Exception as exc:
+            raise AppError(
+                code="STORAGE_UPLOAD_FAILED",
+                message="Cloudinary chưa thể lưu tài liệu.",
+                status_code=502,
+                resolution="Kiểm tra Cloud name, API key, API secret trên Render rồi thử lại.",
+                retryable=True,
+                details={"provider": "cloudinary", "reason": type(exc).__name__},
+            ) from exc
         return {
             "provider": "cloudinary",
             "publicId": result["public_id"],
@@ -92,4 +106,3 @@ class StorageService:
 
 
 storage_service = StorageService()
-

@@ -1,3 +1,7 @@
+from fastapi.testclient import TestClient
+
+from app.config import settings
+from app.main import app
 from app.security import create_token, decode_token, hash_password, verify_password
 
 
@@ -17,3 +21,11 @@ def test_access_token_round_trip() -> None:
     assert payload["jti"] == token_id
     assert payload["type"] == "access"
 
+
+def test_unexpected_errors_keep_cors_headers() -> None:
+    client = TestClient(app, raise_server_exceptions=False)
+
+    response = client.get("/api/documents", headers={"Origin": settings.frontend_url})
+
+    assert response.status_code == 500
+    assert response.headers["access-control-allow-origin"] == settings.frontend_url
