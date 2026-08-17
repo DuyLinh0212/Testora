@@ -28,12 +28,12 @@ interface Plan {
             <div class="price"><strong>{{ price(plan.code) }}</strong><span>{{ plan.code === 'FREE' ? '' : '/ tháng' }}</span></div>
             <ul><li><b>{{ plan.limits.aiGenerationsPerDay ?? 'Không giới hạn' }}</b> lượt tạo AI / ngày</li><li>File tối đa <b>{{ plan.limits.maxFileSizeMb }} MB</b></li><li>Lưu đồng thời <b>{{ plan.limits.maxStoredDocuments }}</b> tài liệu</li><li [class.off]="!plan.limits.advancedGeneration">{{ plan.limits.advancedGeneration ? 'Có' : 'Không có' }} cấu hình AI nâng cao</li><li>Giữ bộ câu hỏi sau khi xóa tài liệu</li></ul>
             @if (auth.user()?.currentPlan === plan.code) { <button class="btn btn-secondary" type="button" disabled>Đang sử dụng</button> }
-            @else if (plan.code !== 'FREE') { <button class="btn btn-primary" type="button" (click)="upgrade(plan.code)">Nâng cấp {{ plan.name }}</button> }
-            @else { <button class="btn btn-secondary" type="button" (click)="cancel()">Chuyển về Free</button> }
+            @else if (plan.code !== 'FREE') { <button class="btn btn-primary" type="button" (click)="showMaintenance()">Nâng cấp {{ plan.name }}</button> }
+            @else { <button class="btn btn-secondary" type="button" (click)="showMaintenance()">Chuyển về Free</button> }
           </article>
         }
       </div>
-      <p class="demo-note">Thanh toán chưa được tích hợp. Nút nâng cấp hiện tạo subscription demo 30 ngày để kiểm thử phân quyền Pro/Max.</p>
+      <p class="demo-note">Hệ thống nâng cấp đang cập nhật. Tạm thời bạn chưa thể tự thay đổi gói.</p>
     </section>
   `,
   styles: `
@@ -68,7 +68,5 @@ export class PricingPage implements OnInit {
   ngOnInit(): void { this.api.get<Plan[]>('/plans').subscribe({ next: (plans) => this.plans.set(plans), error: (error) => this.error.set(errorMessage(error)) }); }
   description(code: Plan['code']): string { return code === 'FREE' ? 'Cho nhịp ôn tập nhẹ mỗi ngày.' : code === 'PRO' ? 'Cho học kỳ bận rộn và tài liệu dài.' : 'Cho thư viện tài liệu lớn và nhu cầu liên tục.'; }
   price(code: Plan['code']): string { return code === 'FREE' ? '0đ' : code === 'PRO' ? '99.000đ' : '249.000đ'; }
-  upgrade(code: 'PRO' | 'MAX'): void { this.api.post('/subscription/upgrade', { planCode: code }).subscribe({ next: () => this.auth.loadProfile().subscribe(), error: (error) => this.error.set(errorMessage(error)) }); }
-  cancel(): void { this.api.post('/subscription/cancel', {}).subscribe({ next: () => this.auth.loadProfile().subscribe(), error: (error) => this.error.set(errorMessage(error)) }); }
+  showMaintenance(): void { this.error.set('Hệ thống nâng cấp đang cập nhật. Tạm thời bạn chưa thể tự thay đổi gói.'); }
 }
-

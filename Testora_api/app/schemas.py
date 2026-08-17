@@ -110,7 +110,8 @@ class QuizConfig(BaseModel):
     questionCount: int = Field(ge=1, le=100)
     durationMinutes: int = Field(default=30, ge=1, le=300)
     shuffleQuestions: bool = True
-    shuffleOptions: bool = True
+    # Keep A–D stable so the visible labels always match the source question.
+    shuffleOptions: bool = False
     leaderboardEnabled: bool = True
 
 

@@ -2,13 +2,25 @@ from datetime import timedelta
 
 from fastapi import APIRouter
 
+from app.config import settings
 from app.dependencies import CurrentUser, DatabaseDep
+from app.errors import AppError
 from app.schemas import UpgradeSubscriptionRequest
 from app.services.plans import get_usage
 from app.utils import serialize, utc_now
 
 
 router = APIRouter(tags=["Account"])
+
+
+def _require_subscription_self_service() -> None:
+    if not settings.subscription_self_service_enabled:
+        raise AppError(
+            code="SUBSCRIPTION_MAINTENANCE",
+            message="Hệ thống nâng cấp đang cập nhật.",
+            status_code=503,
+            resolution="Tạm thời chưa thể tự thay đổi gói. Vui lòng thử lại sau.",
+        )
 
 
 @router.get("/plans")
@@ -31,6 +43,7 @@ async def subscription(user: CurrentUser, db: DatabaseDep) -> dict:
 async def upgrade(
     payload: UpgradeSubscriptionRequest, user: CurrentUser, db: DatabaseDep
 ) -> dict:
+    _require_subscription_self_service()
     now = utc_now()
     expires_at = now + timedelta(days=30)
     await db.subscriptions.update_many(
@@ -58,6 +71,7 @@ async def upgrade(
 
 @router.post("/subscription/cancel")
 async def cancel_subscription(user: CurrentUser, db: DatabaseDep) -> dict:
+    _require_subscription_self_service()
     now = utc_now()
     await db.subscriptions.update_many(
         {"userId": user["_id"], "status": "ACTIVE"},

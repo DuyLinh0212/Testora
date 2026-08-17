@@ -112,7 +112,7 @@ export class QuestionBankDetailPage implements OnInit {
   toggleQuiz(): void { this.showQuiz.set(!this.showQuiz()); }
 
   createQuiz(): void {
-    this.api.post<Quiz>('/quizzes', { questionBankId: this.bankId, title: this.quizTitle, description: '', visibility: this.visibility, config: { questionCount: this.quizQuestionCount, durationMinutes: this.durationMinutes, shuffleQuestions: true, shuffleOptions: true, leaderboardEnabled: this.leaderboardEnabled } }).subscribe({ next: () => void this.router.navigateByUrl('/quizzes'), error: (error) => this.error.set(errorMessage(error)) });
+    this.api.post<Quiz>('/quizzes', { questionBankId: this.bankId, title: this.quizTitle, description: '', visibility: this.visibility, config: { questionCount: this.quizQuestionCount, durationMinutes: this.durationMinutes, shuffleQuestions: true, shuffleOptions: false, leaderboardEnabled: this.leaderboardEnabled } }).subscribe({ next: () => void this.router.navigateByUrl('/quizzes'), error: (error) => this.error.set(errorMessage(error)) });
   }
 
   addQuestion(): void {

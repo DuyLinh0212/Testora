@@ -1,7 +1,11 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.config import settings
+from app.errors import AppError
 from app.main import app
+from app.routers.account import _require_subscription_self_service
+from app.schemas import QuizConfig
 from app.security import create_token, decode_token, hash_password, verify_password
 
 
@@ -29,3 +33,13 @@ def test_unexpected_errors_keep_cors_headers() -> None:
 
     assert response.status_code == 500
     assert response.headers["access-control-allow-origin"] == settings.frontend_url
+
+
+def test_quiz_options_keep_a_to_d_order_by_default() -> None:
+    assert QuizConfig(questionCount=1).shuffleOptions is False
+
+
+def test_subscription_self_service_is_locked_by_default() -> None:
+    assert settings.subscription_self_service_enabled is False
+    with pytest.raises(AppError, match="nâng cấp đang cập nhật"):
+        _require_subscription_self_service()

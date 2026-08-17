@@ -136,9 +136,12 @@ async def start_quiz(quiz_id: str, user: CurrentUser, db: DatabaseDep) -> dict:
     attempt["_id"] = (await db.quiz_attempts.insert_one(attempt)).inserted_id
     public_questions = []
     for question in questions:
-        options = [dict(option) for option in question["options"]]
-        if quiz["config"].get("shuffleOptions", True):
-            random.SystemRandom().shuffle(options)
+        # Keep answer labels and their reading order stable for every quiz,
+        # including older quizzes that were saved with shuffleOptions enabled.
+        options = sorted(
+            (dict(option) for option in question["options"]),
+            key=lambda option: option.get("id", ""),
+        )
         public_questions.append(
             {
                 "_id": question["_id"],
