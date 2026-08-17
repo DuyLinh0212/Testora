@@ -5,7 +5,12 @@ import { dirname, join } from 'node:path';
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const environmentPath = join(scriptDirectory, '..', 'src', 'environments', 'environment.ts');
 const configuredUrl = process.env.TESTORA_API_URL?.trim();
-const apiUrl = configuredUrl ? configuredUrl.replace(/\/$/, '') : '/api';
+const configuredOrigin = configuredUrl?.replace(/\/+$/, '');
+const apiUrl = configuredOrigin
+  ? configuredOrigin.endsWith('/api')
+    ? configuredOrigin
+    : `${configuredOrigin}/api`
+  : '/api';
 const nextContent = `export const environment = {\n  apiUrl: ${JSON.stringify(apiUrl)},\n  production: true,\n};\n`;
 
 if (readFileSync(environmentPath, 'utf8') !== nextContent) {

@@ -10,7 +10,9 @@ import { errorMessage } from '../core/error-message';
   template: `
     <main class="auth-page">
       <section class="auth-story">
-        <a class="brand" routerLink="/"><span>T</span> Testora</a>
+        <a class="brand" routerLink="/" aria-label="Testora">
+          <img src="assets/testora-logo.png" alt="Testora" />
+        </a>
         <div>
           <p class="eyebrow">Tài liệu → câu hỏi → ghi nhớ</p>
           <h1>Mỗi tài liệu đều có thể trở thành một buổi ôn tập tốt.</h1>
@@ -51,8 +53,8 @@ import { errorMessage } from '../core/error-message';
     .auth-page { display: grid; min-height: 100dvh; grid-template-columns: minmax(0, 1.05fr) minmax(420px, .95fr); background: #fff; }
     .auth-story { position: relative; display: flex; min-height: 100%; flex-direction: column; justify-content: space-between; overflow: hidden; padding: clamp(2rem, 6vw, 5.5rem); background: #edf4ff; }
     .auth-story::after { position: absolute; right: -9rem; bottom: -8rem; width: 28rem; height: 28rem; border: 5rem solid rgba(36,87,230,.07); border-radius: 50%; content: ''; }
-    .brand { display: flex; z-index: 1; align-items: center; gap: .65rem; color: var(--ink); font-size: 1.1rem; font-weight: 800; text-decoration: none; }
-    .brand span { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px 12px 12px 4px; background: var(--cobalt); color: white; }
+    .brand { z-index: 1; display: block; width: fit-content; text-decoration: none; }
+    .brand img { display: block; width: clamp(140px, 15vw, 180px); height: auto; }
     .auth-story h1 { max-width: 700px; font-size: clamp(2.6rem, 5vw, 5.4rem); }
     .auth-story p { max-width: 640px; font-size: 1.05rem; }
     .story-rail { position: relative; z-index: 1; display: flex; gap: .35rem; }
@@ -92,4 +94,3 @@ export class LoginPage {
       });
   }
 }
-

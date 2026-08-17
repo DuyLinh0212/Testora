@@ -9,11 +9,8 @@ import { AuthService } from '../core/auth.service';
     <div class="shell">
       <aside class="sidebar">
         <a class="brand" routerLink="/dashboard" aria-label="Testora - Tổng quan">
-          <span class="brand-mark">T</span>
-          <span>
-            <strong>Testora</strong>
-            <small>Học qua từng câu hỏi</small>
-          </span>
+          <img src="assets/testora-logo.png" alt="Testora" />
+          <small>Học qua từng câu hỏi</small>
         </a>
 
         <nav class="learning-rail" aria-label="Điều hướng chính">
@@ -56,11 +53,9 @@ import { AuthService } from '../core/auth.service';
   styles: `
     .shell { min-height: 100dvh; }
     .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; display: flex; width: 238px; flex-direction: column; padding: 1.35rem 1rem; border-right: 1px solid var(--line); background: rgba(255,255,255,.92); backdrop-filter: blur(18px); }
-    .brand { display: flex; align-items: center; gap: .75rem; padding: .2rem .35rem 1.4rem; text-decoration: none; }
-    .brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 13px 13px 13px 4px; background: var(--cobalt); color: white; font-weight: 850; }
-    .brand strong, .brand small { display: block; }
-    .brand strong { font-size: 1.05rem; letter-spacing: -.02em; }
-    .brand small { margin-top: .1rem; color: var(--muted); font-size: .7rem; }
+    .brand { display: grid; width: fit-content; gap: .15rem; padding: .1rem .35rem 1.25rem; text-decoration: none; }
+    .brand img { display: block; width: 144px; height: auto; }
+    .brand small { padding-left: 2.8rem; color: var(--muted); font-size: .68rem; }
     .learning-rail { position: relative; display: grid; gap: .28rem; padding: .4rem 0; }
     .learning-rail::before { position: absolute; top: 1.65rem; bottom: 1.65rem; left: 1.16rem; width: 1px; background: #cfdced; content: ''; }
     .learning-rail a { position: relative; display: flex; align-items: center; gap: .8rem; min-height: 46px; padding: .65rem .75rem; border-radius: 12px; color: #53627a; font-weight: 680; text-decoration: none; }

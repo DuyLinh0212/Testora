@@ -6,6 +6,10 @@
   "outputDirectory": "Testora_web/dist/Testora_web/browser",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://testora-hh70.onrender.com/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

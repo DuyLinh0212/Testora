@@ -9,7 +9,9 @@ import { errorMessage } from '../core/error-message';
   imports: [FormsModule, RouterLink],
   template: `
     <main class="register-page">
-      <a class="brand" routerLink="/login"><span>T</span> Testora</a>
+      <a class="brand" routerLink="/login" aria-label="Testora">
+        <img src="assets/testora-logo.png" alt="Testora" />
+      </a>
       <section class="register-card">
         <div class="intro">
           <p class="eyebrow">Bắt đầu với gói Free</p>
@@ -32,8 +34,8 @@ import { errorMessage } from '../core/error-message';
   `,
   styles: `
     .register-page { min-height: 100dvh; padding: clamp(1.25rem, 4vw, 3rem); background: linear-gradient(135deg, #f7fafc 50%, #edf4ff 50%); }
-    .brand { display: flex; width: fit-content; align-items: center; gap: .65rem; font-weight: 820; text-decoration: none; }
-    .brand span { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px 12px 12px 4px; background: var(--cobalt); color: white; }
+    .brand { display: block; width: fit-content; text-decoration: none; }
+    .brand img { display: block; width: clamp(140px, 15vw, 180px); height: auto; }
     .register-card { display: grid; width: min(940px, 100%); grid-template-columns: .85fr 1.15fr; gap: clamp(2rem, 6vw, 5rem); margin: clamp(3rem, 8vh, 6rem) auto 0; padding: clamp(1.3rem, 4vw, 3rem); border: 1px solid var(--line); border-radius: 28px; background: rgba(255,255,255,.95); box-shadow: var(--shadow); }
     .intro h1 { font-size: clamp(2.2rem, 4vw, 3.8rem); }
     form { display: grid; gap: 1rem; align-content: start; }
@@ -69,4 +71,3 @@ export class RegisterPage {
       });
   }
 }
-
