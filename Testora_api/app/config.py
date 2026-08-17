@@ -1,7 +1,8 @@
 from functools import lru_cache
 from pathlib import Path
+import secrets
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,7 +24,7 @@ class Settings(BaseSettings):
     mongodb_uri: str = "mongodb://localhost:27017"
     mongodb_database: str = "testora"
 
-    jwt_secret_key: str = "development-only-change-this-secret-key-now"
+    jwt_secret_key: str | None = None
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 30
@@ -64,6 +65,23 @@ class Settings(BaseSettings):
     def strip_frontend_url(cls, value: str) -> str:
         return value.rstrip("/")
 
+    @model_validator(mode="after")
+    def enforce_production_secrets(self) -> "Settings":
+        is_production = self.app_env.lower() in {"production", "prod"}
+        if not self.jwt_secret_key:
+            if is_production:
+                raise ValueError("JWT_SECRET_KEY must be configured in production")
+            self.jwt_secret_key = secrets.token_urlsafe(48)
+            return self
+
+        normalized = self.jwt_secret_key.lower()
+        looks_like_placeholder = normalized.startswith(
+            ("replace-", "change-", "development-", "example-")
+        )
+        if is_production and (len(self.jwt_secret_key) < 32 or looks_like_placeholder):
+            raise ValueError("JWT_SECRET_KEY must be a strong non-placeholder value")
+        return self
+
     @property
     def upload_path(self) -> Path:
         path = Path(self.local_upload_dir)
@@ -82,4 +100,3 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
-
