@@ -44,7 +44,17 @@ interface AiJob {
         </aside>
 
         <div class="document-main">
-          <div class="rail-caption"><span class="step">02</span><div><h2>Chọn hành động tiếp theo</h2><p>Tài liệu đã sẵn sàng có thể tạo quiz hoặc hỏi bằng RAG.</p></div></div>
+          <div class="rail-caption">
+            <span class="step">02</span>
+            <div><h2>Chọn hành động tiếp theo</h2><p>Tài liệu đã sẵn sàng có thể tạo quiz hoặc hỏi bằng RAG.</p></div>
+            @if (canChooseQuestionCount()) {
+              <label class="generation-count">
+                <span>Số câu / bộ</span>
+                <input type="number" min="5" max="100" step="1" [(ngModel)]="questionCount" [ngModelOptions]="{standalone: true}" (change)="normalizeQuestionCount()" />
+                <small>Pro/Max · 5–100 câu</small>
+              </label>
+            }
+          </div>
           @if (loading()) {
             <div class="stack"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
           } @else if (documents().length) {
@@ -58,7 +68,7 @@ interface AiJob {
                     <div class="processing"><span [class.on]="document.processing.analyzed">Đã đọc</span><span [class.on]="document.processing.chunked">Đã chia đoạn</span><span [class.on]="document.processing.embedded">Vector RAG</span></div>
                   </div>
                   <div class="document-actions">
-                    <button class="btn btn-primary" type="button" (click)="generate(document)" [disabled]="Boolean(activeJob())">Tạo bộ câu hỏi</button>
+                    <button class="btn btn-primary" type="button" (click)="generate(document)" [disabled]="Boolean(activeJob())">{{ canChooseQuestionCount() ? 'Tạo ' + selectedQuestionCount() + ' câu' : 'Tạo bộ câu hỏi' }}</button>
                     <button class="btn btn-secondary" type="button" (click)="openAsk(document)">Hỏi tài liệu</button>
                     <button class="btn btn-danger" type="button" (click)="remove(document)">Xóa</button>
                   </div>
@@ -108,6 +118,10 @@ interface AiJob {
     .document-main { display: grid; gap: 1rem; }
     .rail-caption { display: flex; gap: .8rem; align-items: flex-start; }
     .rail-caption .step { flex: none; margin: 0; }
+    .generation-count { display: grid; width: 118px; gap: .22rem; margin-left: auto; color: var(--muted); font-size: .68rem; font-weight: 750; }
+    .generation-count input { width: 100%; padding: .45rem .55rem; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); font: inherit; font-size: .86rem; }
+    .generation-count input:focus { border-color: var(--cobalt); outline: 3px solid rgba(53, 88, 238, .12); }
+    .generation-count small { font-weight: 500; white-space: nowrap; }
     .document-list { display: grid; gap: .8rem; }
     .document-card { display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; padding: 1rem; }
     .file-tile { display: grid; width: 66px; height: 66px; place-items: center; align-content: center; border-radius: 16px; background: var(--surface-soft); color: var(--cobalt); }
@@ -130,7 +144,7 @@ interface AiJob {
     .answer { margin-top: 1rem; padding: 1rem; border-left: 3px solid var(--aqua); border-radius: 0 12px 12px 0; background: #f1fbf9; white-space: pre-wrap; }
     .answer p { margin: .65rem 0 0; color: #294a46; }
     @media (max-width: 1000px) { .document-layout { grid-template-columns: 1fr; } .upload-card { position: static; } }
-    @media (max-width: 700px) { .document-card { grid-template-columns: auto 1fr; } .document-actions { grid-column: 1 / -1; justify-content: stretch; max-width: none; } .document-actions .btn { flex: 1; } }
+    @media (max-width: 700px) { .rail-caption { flex-wrap: wrap; } .generation-count { margin-left: 42px; } .document-card { grid-template-columns: auto 1fr; } .document-actions { grid-column: 1 / -1; justify-content: stretch; max-width: none; } .document-actions .btn { flex: 1; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -148,6 +162,7 @@ export class DocumentsPage implements OnInit {
   readonly ragAnswer = signal('');
   selectedFile: File | null = null;
   documentName = '';
+  questionCount = 10;
   processingMode: DocumentItem['processingMode'] = 'GENERATE_FROM_DOCUMENT';
   ragQuestion = '';
   protected readonly Boolean = Boolean;
@@ -181,11 +196,20 @@ export class DocumentsPage implements OnInit {
   }
 
   generate(document: DocumentItem): void {
+    this.normalizeQuestionCount();
+    const count = this.selectedQuestionCount();
     this.error.set('');
-    this.api.post<AiJob>('/question-banks/generate', { documentId: document._id, mode: 'BASIC', questionCount: 10, difficulty: 'mixed', distribution: 'automatic', topics: [], questionTypes: ['recall', 'understanding'] }).subscribe({
-      next: (job) => { this.activeJob.set({ ...job, status: 'PENDING', progress: { current: 0, total: 10, percent: 0 } }); this.pollJob(job.jobId!); },
+    this.api.post<AiJob>('/question-banks/generate', { documentId: document._id, mode: 'BASIC', questionCount: count, difficulty: 'mixed', distribution: 'automatic', topics: [], questionTypes: ['recall', 'understanding'] }).subscribe({
+      next: (job) => { this.activeJob.set({ ...job, status: 'PENDING', progress: { current: 0, total: count, percent: 0 } }); this.pollJob(job.jobId!); },
       error: (error) => this.error.set(errorMessage(error)),
     });
+  }
+
+  canChooseQuestionCount(): boolean { return this.usage()?.plan === 'PRO' || this.usage()?.plan === 'MAX'; }
+  selectedQuestionCount(): number { return this.canChooseQuestionCount() ? this.questionCount : 10; }
+  normalizeQuestionCount(): void {
+    const count = Number(this.questionCount);
+    this.questionCount = Math.min(100, Math.max(5, Number.isFinite(count) ? Math.round(count) : 10));
   }
 
   private pollJob(jobId: string): void {

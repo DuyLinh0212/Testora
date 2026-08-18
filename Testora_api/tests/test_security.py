@@ -5,7 +5,7 @@ from app.config import settings
 from app.errors import AppError
 from app.main import app
 from app.routers.account import _require_subscription_self_service
-from app.schemas import QuizConfig
+from app.schemas import GenerationRequest, QuizConfig
 from app.security import create_token, decode_token, hash_password, verify_password
 
 
@@ -43,3 +43,8 @@ def test_subscription_self_service_is_locked_by_default() -> None:
     assert settings.subscription_self_service_enabled is False
     with pytest.raises(AppError, match="nâng cấp đang cập nhật"):
         _require_subscription_self_service()
+
+
+def test_generation_request_accepts_pro_question_count() -> None:
+    request = GenerationRequest(documentId="507f1f77bcf86cd799439011", questionCount=42)
+    assert request.questionCount == 42
