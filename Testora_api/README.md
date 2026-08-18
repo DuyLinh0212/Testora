@@ -23,11 +23,15 @@ Nếu chưa có `GEMINI_API_KEY`, luồng tạo câu hỏi vẫn chạy bằng b
 - `/api/question-banks/generate`: atomic quota + AI job theo batch.
 - `/api/quizzes/*`: CRUD, share code, start attempt, submit, review, câu sai và leaderboard.
 - `/api/dashboard`, `/api/usage`, `/api/plans`, `/api/subscription/*`.
+- `/api/payments/orders`: tạo và theo dõi đơn chuyển khoản VietQR của chính tài khoản đăng nhập.
+- `/api/webhooks/sepay`: nhận thông báo giao dịch xác thực từ SePay và kích hoạt gói tự động.
 
 ## Lưu ý production
 
 - Đổi `JWT_SECRET_KEY` thành chuỗi ngẫu nhiên tối thiểu 32 ký tự.
 - Tạo Atlas Vector Search index tên `document_chunks_vector` trên trường `embedding` (768 chiều) nếu bật RAG vector.
 - BackgroundTasks phù hợp MVP một instance. Khi scale nhiều worker, chuyển AI job sang hàng đợi bền vững như Celery/Arq + Redis.
-- Endpoint upgrade hiện là luồng demo và chưa thu tiền; model subscription đã tách để cắm Stripe/PayOS/VNPay/Momo sau.
+- Nâng cấp trực tiếp qua `/api/subscription/upgrade` bị khóa mặc định. Gói chỉ được kích hoạt từ một đơn thanh toán SePay đã xác thực.
+- Để bật thanh toán: đặt `PAYMENT_PROVIDER=sepay`, thông tin tài khoản nhận VietQR và `SEPAY_WEBHOOK_API_KEY` trên Render. Trong SePay, liên kết tài khoản ngân hàng, tạo webhook sự kiện **Có tiền vào** tới `https://<render-domain>/api/webhooks/sepay`, dùng API Key authentication và cấu hình lọc tiền tố `TSTP`.
+- Không đưa API key SePay, thông tin ngân hàng riêng hoặc QR chứa dữ liệu nhạy cảm vào Git. Webhook kiểm tra API key, số tài khoản, số tiền chính xác, mã chuyển khoản riêng và id giao dịch chống gửi lại.
 - Không commit `.env`, connection string, token hoặc private key vào repository.

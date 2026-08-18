@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.database import database, get_database
 from app.errors import AppError, error_payload, register_exception_handlers
-from app.routers import account, auth, documents, question_banks, quizzes
+from app.routers import account, auth, documents, payments, question_banks, quizzes
 from app.security import decode_token
 from app.services.rate_limit import check_rate_limit
 
@@ -82,6 +82,7 @@ if settings.storage_backend.lower() == "local":
 
 app.include_router(auth.router, prefix=settings.api_prefix)
 app.include_router(account.router, prefix=settings.api_prefix)
+app.include_router(payments.router, prefix=settings.api_prefix)
 app.include_router(documents.router, prefix=settings.api_prefix)
 app.include_router(question_banks.router, prefix=settings.api_prefix)
 app.include_router(quizzes.router, prefix=settings.api_prefix)
@@ -96,6 +97,7 @@ async def health() -> dict:
         "environment": settings.app_env,
         "storage": settings.storage_backend,
         "aiConfigured": bool(settings.gemini_api_key),
+        "paymentsConfigured": settings.payments_configured,
     }
 
 

@@ -116,11 +116,12 @@ Submit sử dụng cập nhật có điều kiện `IN_PROGRESS -> SUBMITTED`, n
 | UI | CSS thuần, responsive layout, system fonts, reduced-motion |
 | API | Python 3.12, FastAPI, Uvicorn, Pydantic |
 | Data | MongoDB, PyMongo Async API, TTL/unique/compound indexes |
-| Security | JWT, Argon2 password hashing, resource ownership checks, CORS, rate limiting |
+| Security | JWT, Argon2 password hashing, resource ownership checks, CORS, rate limiting, signed payment webhook |
 | Documents | pypdf, python-docx, multipart upload |
 | AI | Structured generation, embeddings, vector/lexical retrieval |
 | Testing | Pytest, Jasmine/Karma, Chrome Headless, Playwright local QA |
 | Delivery | GitHub Actions, Vercel CLI, Vercel project configuration |
+| Payment | VietQR checkout, SePay API-key webhook, idempotent order fulfillment |
 
 Font giao diện chỉ dùng font hệ thống (`Segoe UI`, `Arial`, `Consolas` và các fallback tương đương), không tải font thương mại.
 

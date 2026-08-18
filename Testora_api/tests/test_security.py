@@ -6,6 +6,7 @@ from app.errors import AppError
 from app.main import app
 from app.routers.account import _require_subscription_self_service
 from app.schemas import GenerationRequest, QuizConfig
+from app.services.payments import _clean_account, _transfer_code
 from app.security import create_token, decode_token, hash_password, verify_password
 
 
@@ -48,3 +49,13 @@ def test_subscription_self_service_is_locked_by_default() -> None:
 def test_generation_request_accepts_pro_question_count() -> None:
     request = GenerationRequest(documentId="507f1f77bcf86cd799439011", questionCount=42)
     assert request.questionCount == 42
+
+
+def test_payment_transfer_code_is_extracted_without_trusting_free_text() -> None:
+    event = type(
+        "SePayEvent",
+        (),
+        {"code": None, "content": "tstpabcdef1234 chuyen khoan", "description": None},
+    )()
+    assert _transfer_code(event) == "TSTPABCDEF1234"
+    assert _clean_account("36 142 087") == "36142087"

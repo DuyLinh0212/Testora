@@ -51,6 +51,22 @@ class UpgradeSubscriptionRequest(BaseModel):
     planCode: Literal["PRO", "MAX"]
 
 
+class PaymentOrderRequest(BaseModel):
+    planCode: Literal["PRO", "MAX"]
+
+
+class SePayWebhookEvent(BaseModel):
+    id: int | str
+    accountNumber: str
+    transferType: str
+    transferAmount: int = Field(ge=0)
+    content: str | None = None
+    description: str | None = None
+    code: str | None = None
+    referenceCode: str | None = None
+    transactionDate: str | None = None
+
+
 class RenameRequest(BaseModel):
     name: str = Field(min_length=2, max_length=160)
 

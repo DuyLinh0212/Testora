@@ -31,6 +31,15 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 30
     subscription_self_service_enabled: bool = False
 
+    payment_provider: str = "disabled"
+    payment_bank_code: str | None = None
+    payment_account_number: str | None = None
+    payment_account_name: str | None = None
+    payment_order_expire_minutes: int = 30
+    payment_pro_price_vnd: int = 99_000
+    payment_max_price_vnd: int = 249_000
+    sepay_webhook_api_key: str | None = None
+
     frontend_url: str = "http://localhost:4200"
 
     storage_backend: str = "local"
@@ -93,6 +102,17 @@ class Settings(BaseSettings):
     def cloudinary_configured(self) -> bool:
         return all(
             (self.cloudinary_cloud_name, self.cloudinary_api_key, self.cloudinary_api_secret)
+        )
+
+    @property
+    def payments_configured(self) -> bool:
+        return self.payment_provider.lower() == "sepay" and all(
+            (
+                self.payment_bank_code,
+                self.payment_account_number,
+                self.payment_account_name,
+                self.sepay_webhook_api_key,
+            )
         )
 
 

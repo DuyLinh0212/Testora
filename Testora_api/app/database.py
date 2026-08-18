@@ -68,6 +68,15 @@ class DatabaseManager:
         await self.db.refresh_sessions.create_indexes(
             [IndexModel("jti", unique=True), IndexModel("expiresAt", expireAfterSeconds=0)]
         )
+        await self.db.payment_orders.create_indexes(
+            [
+                IndexModel("transferCode", unique=True),
+                IndexModel("providerTransactionId", unique=True, sparse=True),
+                IndexModel([("userId", ASCENDING), ("createdAt", DESCENDING)]),
+                IndexModel([("status", ASCENDING), ("expiresAt", ASCENDING)]),
+            ]
+        )
+        await self.db.subscriptions.create_index("paymentOrderId", unique=True, sparse=True)
 
     async def seed_plans(self) -> None:
         now = utc_now()
