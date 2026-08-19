@@ -80,6 +80,13 @@ class DatabaseManager:
 
     async def seed_plans(self) -> None:
         now = utc_now()
+        # Giá lấy từ cấu hình để trang Gói hiển thị đúng số tiền mà webhook sẽ
+        # đối chiếu. Lệch nhau một đồng là chuyển khoản bị bỏ qua im lặng.
+        prices = {
+            PlanCode.FREE: 0,
+            PlanCode.PRO: settings.payment_pro_price_vnd,
+            PlanCode.MAX: settings.payment_max_price_vnd,
+        }
         plans = (
             (PlanCode.FREE, "Free", 1, 3, 5, False),
             (PlanCode.PRO, "Pro", 10, 10, 30, True),
@@ -91,6 +98,7 @@ class DatabaseManager:
                 {
                     "$set": {
                         "name": name,
+                        "priceVnd": prices[code],
                         "limits": {
                             "aiGenerationsPerDay": ai_limit,
                             "maxStoredDocuments": docs_limit,

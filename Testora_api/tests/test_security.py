@@ -1,12 +1,12 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.config import settings
+from app.config import Settings, settings
 from app.errors import AppError
 from app.main import app
 from app.routers.account import _require_subscription_self_service
 from app.schemas import GenerationRequest, QuizConfig
-from app.services.payments import _clean_account, _transfer_code
+from app.services.payments import _clean_account, _transfer_code, webhook_key_matches
 from app.security import create_token, decode_token, hash_password, verify_password
 
 
@@ -59,3 +59,25 @@ def test_payment_transfer_code_is_extracted_without_trusting_free_text() -> None
     )()
     assert _transfer_code(event) == "TSTPABCDEF1234"
     assert _clean_account("36 142 087") == "36142087"
+
+
+def test_webhook_key_tolerates_config_formatting_but_not_a_wrong_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "sepay_webhook_api_key", "testora_sepay_abc123")
+
+    assert webhook_key_matches("Apikey testora_sepay_abc123")
+    assert webhook_key_matches("  apikey   testora_sepay_abc123  ")
+    assert webhook_key_matches("Bearer testora_sepay_abc123")
+    assert webhook_key_matches("testora_sepay_abc123")
+
+    assert not webhook_key_matches("Apikey testora_sepay_abc124")
+    assert not webhook_key_matches("Apikey ")
+    assert not webhook_key_matches(None)
+
+
+def test_webhook_key_is_unset_when_config_holds_only_quotes_or_spaces() -> None:
+    assert Settings(sepay_webhook_api_key='  "  "  ').sepay_webhook_api_key is None
+    assert Settings(sepay_webhook_api_key='"testora_sepay_abc123"\n').sepay_webhook_api_key == (
+        "testora_sepay_abc123"
+    )

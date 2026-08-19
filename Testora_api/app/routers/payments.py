@@ -1,8 +1,5 @@
-import secrets
-
 from fastapi import APIRouter, Header, status
 
-from app.config import settings
 from app.dependencies import CurrentUser, DatabaseDep
 from app.errors import AppError
 from app.schemas import PaymentOrderRequest, SePayWebhookEvent
@@ -11,6 +8,7 @@ from app.services.payments import (
     process_sepay_event,
     public_order,
     require_payment_configuration,
+    webhook_key_matches,
 )
 from app.utils import parse_object_id
 
@@ -40,8 +38,13 @@ async def sepay_webhook(
     authorization: str | None = Header(default=None),
 ) -> dict:
     require_payment_configuration()
-    expected = f"Apikey {settings.sepay_webhook_api_key}"
-    if not authorization or not secrets.compare_digest(authorization, expected):
-        raise AppError("WEBHOOK_UNAUTHORIZED", "Webhook không hợp lệ.", 401)
-    await process_sepay_event(db, payload)
-    return {"success": True}
+    if not webhook_key_matches(authorization):
+        raise AppError(
+            "WEBHOOK_UNAUTHORIZED",
+            "Webhook không hợp lệ.",
+            401,
+            resolution="Kiểm tra SEPAY_WEBHOOK_API_KEY của API có trùng API Key trong cấu hình webhook SePay.",
+        )
+    # Trả lại kết quả xử lý để nhật ký webhook của SePay cho thấy vì sao một
+    # giao dịch bị bỏ qua (sai số tiền, sai mã chuyển khoản, đơn đã hết hạn).
+    return {"success": True, "result": await process_sepay_event(db, payload)}

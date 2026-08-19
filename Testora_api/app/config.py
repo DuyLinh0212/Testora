@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     payment_account_number: str | None = None
     payment_account_name: str | None = None
     payment_order_expire_minutes: int = 30
-    payment_pro_price_vnd: int = 99_000
-    payment_max_price_vnd: int = 249_000
+    payment_pro_price_vnd: int = 10_000
+    payment_max_price_vnd: int = 49_000
     sepay_webhook_api_key: str | None = None
 
     frontend_url: str = "http://localhost:4200"
@@ -75,6 +75,25 @@ class Settings(BaseSettings):
     @classmethod
     def strip_frontend_url(cls, value: str) -> str:
         return value.rstrip("/")
+
+    @field_validator(
+        "payment_bank_code",
+        "payment_account_number",
+        "payment_account_name",
+        "sepay_webhook_api_key",
+        mode="before",
+    )
+    @classmethod
+    def clean_pasted_value(cls, value: object) -> object:
+        """Dán giá trị vào biến môi trường thường kéo theo khoảng trắng hoặc dấu nháy.
+
+        Với khóa webhook, một ký tự thừa làm mọi callback của SePay trả 401 và
+        tài khoản không được nâng cấp, nên chuẩn hóa ngay tại đây.
+        """
+        if not isinstance(value, str):
+            return value
+        cleaned = value.strip().strip("\"'").strip()
+        return cleaned or None
 
     @model_validator(mode="after")
     def enforce_production_secrets(self) -> "Settings":

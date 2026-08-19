@@ -33,5 +33,6 @@ Nếu chưa có `GEMINI_API_KEY`, luồng tạo câu hỏi vẫn chạy bằng b
 - BackgroundTasks phù hợp MVP một instance. Khi scale nhiều worker, chuyển AI job sang hàng đợi bền vững như Celery/Arq + Redis.
 - Nâng cấp trực tiếp qua `/api/subscription/upgrade` bị khóa mặc định. Gói chỉ được kích hoạt từ một đơn thanh toán SePay đã xác thực.
 - Để bật thanh toán: đặt `PAYMENT_PROVIDER=sepay`, thông tin tài khoản nhận VietQR và `SEPAY_WEBHOOK_API_KEY` trên Render. Trong SePay, liên kết tài khoản ngân hàng, tạo webhook sự kiện **Có tiền vào** tới `https://<render-domain>/api/webhooks/sepay`, dùng API Key authentication và cấu hình lọc tiền tố `TSTP`.
+- `SEPAY_WEBHOOK_API_KEY` phải trùng từng ký tự với API Key trong cấu hình webhook SePay. Nếu nhật ký webhook trả `401 WEBHOOK_UNAUTHORIZED` thì hai giá trị đang khác nhau: dán lại khóa ở cả hai nơi rồi bấm **Phát lại** để giao dịch cũ được xử lý và gói được kích hoạt.
 - Không đưa API key SePay, thông tin ngân hàng riêng hoặc QR chứa dữ liệu nhạy cảm vào Git. Webhook kiểm tra API key, số tài khoản, số tiền chính xác, mã chuyển khoản riêng và id giao dịch chống gửi lại.
 - Không commit `.env`, connection string, token hoặc private key vào repository.

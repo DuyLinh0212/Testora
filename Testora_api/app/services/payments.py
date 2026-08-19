@@ -41,6 +41,24 @@ def require_payment_configuration() -> None:
         )
 
 
+def webhook_key_matches(authorization: str | None) -> bool:
+    """So khớp header Authorization của SePay với khóa đã cấu hình.
+
+    SePay gửi ``Apikey <khóa>``. Chấp nhận cả ``Bearer`` và khóa trần, bỏ qua
+    hoa/thường của tên scheme cùng khoảng trắng thừa, vì các sai lệch đó chỉ là
+    lỗi cấu hình chứ không làm khóa bớt bí mật. Bản thân khóa vẫn phải trùng
+    từng ký tự và được so sánh trong thời gian không đổi.
+    """
+    expected = settings.sepay_webhook_api_key
+    if not expected or not authorization:
+        return False
+    token = authorization.strip()
+    scheme, _, remainder = token.partition(" ")
+    if scheme.lower() in {"apikey", "bearer"}:
+        token = remainder.strip()
+    return secrets.compare_digest(token.encode("utf-8"), expected.encode("utf-8"))
+
+
 def qr_code_url(order: dict) -> str:
     bank_code = settings.payment_bank_code or ""
     account_number = settings.payment_account_number or ""

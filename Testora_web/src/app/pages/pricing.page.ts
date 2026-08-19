@@ -9,6 +9,7 @@ interface Plan {
   _id: string;
   code: 'FREE' | 'PRO' | 'MAX';
   name: string;
+  priceVnd: number;
   limits: {
     aiGenerationsPerDay: number | null;
     maxStoredDocuments: number;
@@ -41,7 +42,7 @@ interface PaymentOrder {
           <article class="plan card" [class.featured]="plan.code === 'PRO'" [class.current]="auth.user()?.currentPlan === plan.code">
             <div class="plan-top"><div><span class="badge" [class.badge-success]="auth.user()?.currentPlan === plan.code">{{ auth.user()?.currentPlan === plan.code ? 'GÓI HIỆN TẠI' : plan.code }}</span><h2>{{ plan.name }}</h2></div>@if (plan.code === 'PRO') { <span class="recommend">Cân bằng nhất</span> }</div>
             <p>{{ description(plan.code) }}</p>
-            <div class="price"><strong>{{ price(plan.code) }}</strong><span>{{ plan.code === 'FREE' ? '' : '/ tháng' }}</span></div>
+            <div class="price"><strong>{{ price(plan) }}</strong><span>{{ plan.code === 'FREE' ? '' : '/ tháng' }}</span></div>
             <ul><li><b>{{ plan.limits.aiGenerationsPerDay ?? 'Không giới hạn' }}</b> lượt tạo AI / ngày</li><li>File tối đa <b>{{ plan.limits.maxFileSizeMb }} MB</b></li><li>Lưu đồng thời <b>{{ plan.limits.maxStoredDocuments }}</b> tài liệu</li><li [class.off]="!plan.limits.advancedGeneration">{{ plan.limits.advancedGeneration ? 'Có' : 'Không có' }} cấu hình AI nâng cao</li><li>Giữ bộ câu hỏi sau khi xóa tài liệu</li></ul>
             @if (auth.user()?.currentPlan === plan.code) { <button class="btn btn-secondary" type="button" disabled>Đang sử dụng</button> }
             @else if (plan.code !== 'FREE') { <button class="btn btn-primary" type="button" [disabled]="creatingPayment()" (click)="startPayment(plan.code)">{{ creatingPayment() ? 'Đang tạo thanh toán…' : 'Nâng cấp ' + plan.name }}</button> }
@@ -129,7 +130,8 @@ export class PricingPage implements OnInit, OnDestroy {
   ngOnInit(): void { this.api.get<Plan[]>('/plans').subscribe({ next: (plans) => this.plans.set(plans), error: (error) => this.error.set(errorMessage(error)) }); }
   ngOnDestroy(): void { if (this.paymentPollTimer) clearTimeout(this.paymentPollTimer); }
   description(code: Plan['code']): string { return code === 'FREE' ? 'Cho nhịp ôn tập nhẹ mỗi ngày.' : code === 'PRO' ? 'Cho học kỳ bận rộn và tài liệu dài.' : 'Cho thư viện tài liệu lớn và nhu cầu liên tục.'; }
-  price(code: Plan['code']): string { return code === 'FREE' ? '0đ' : code === 'PRO' ? '99.000đ' : '249.000đ'; }
+  /** Giá do API trả về, cùng nguồn với số tiền webhook đối chiếu. */
+  price(plan: Plan): string { return plan.priceVnd > 0 ? this.formatVnd(plan.priceVnd) : '0đ'; }
   showMaintenance(): void { this.error.set('Hệ thống nâng cấp đang cập nhật. Tạm thời bạn chưa thể tự thay đổi gói.'); }
   formatVnd(amount: number): string { return `${new Intl.NumberFormat('vi-VN').format(amount)}đ`; }
   startPayment(planCode: 'PRO' | 'MAX'): void {
