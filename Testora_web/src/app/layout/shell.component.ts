@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/auth.service';
+import { ConfirmDialogComponent } from './confirm-dialog.component';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ConfirmDialogComponent],
   template: `
     <div class="shell">
       <aside class="sidebar">
@@ -33,7 +34,13 @@ import { AuthService } from '../core/auth.service';
             <span class="plan-chip">{{ auth.user()?.currentPlan || 'FREE' }}</span>
             <span>Nâng giới hạn học tập</span>
           </a>
-          <button class="profile" type="button" (click)="auth.logout()">
+          <button
+            class="profile"
+            type="button"
+            aria-haspopup="dialog"
+            [attr.aria-expanded]="confirmingLogout()"
+            (click)="confirmingLogout.set(true)"
+          >
             <span class="avatar">{{ initial }}</span>
             <span><strong>{{ auth.user()?.username || 'Người học' }}</strong><small>Đăng xuất</small></span>
           </button>
@@ -48,6 +55,19 @@ import { AuthService } from '../core/auth.service';
         <a routerLink="/question-banks" routerLinkActive="active">Câu hỏi</a>
         <a routerLink="/quizzes" routerLinkActive="active">Quiz</a>
       </nav>
+
+      @if (confirmingLogout()) {
+        <app-confirm-dialog
+          [eyebrow]="'Tài khoản ' + (auth.user()?.username || 'của bạn')"
+          title="Đăng xuất khỏi Testora?"
+          message="Phiên học trên thiết bị này sẽ kết thúc. Tài liệu, bộ câu hỏi và kết quả quiz của bạn vẫn được lưu."
+          confirmLabel="Đăng xuất"
+          cancelLabel="Ở lại"
+          tone="danger"
+          (confirmed)="logout()"
+          (dismissed)="confirmingLogout.set(false)"
+        />
+      }
     </div>
   `,
   styles: `
@@ -85,6 +105,7 @@ import { AuthService } from '../core/auth.service';
 })
 export class ShellComponent implements OnInit {
   readonly auth = inject(AuthService);
+  readonly confirmingLogout = signal(false);
 
   get initial(): string {
     return (this.auth.user()?.username || 'T').charAt(0).toUpperCase();
@@ -92,5 +113,10 @@ export class ShellComponent implements OnInit {
 
   ngOnInit(): void {
     this.auth.loadProfile().subscribe();
+  }
+
+  logout(): void {
+    this.confirmingLogout.set(false);
+    this.auth.logout();
   }
 }

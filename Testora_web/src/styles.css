@@ -256,6 +256,87 @@ p {
   outline: 3px solid rgba(36, 87, 230, 0.12);
 }
 
+.field .control {
+  position: relative;
+  display: grid;
+}
+
+.field .control input {
+  padding-right: 4.1rem;
+}
+
+.reveal {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  min-height: 34px;
+  padding: 0.35rem 0.55rem;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cobalt);
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.reveal:hover {
+  background: var(--surface-soft);
+}
+
+.field.invalid input,
+.field.invalid select,
+.field.invalid textarea {
+  border-color: #dd8b92;
+  background: #fffbfb;
+}
+
+.field.invalid input:focus,
+.field.invalid select:focus,
+.field.invalid textarea:focus {
+  border-color: var(--coral);
+  outline-color: rgba(232, 91, 101, 0.18);
+}
+
+.field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0;
+  color: #a92e39;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.45;
+  animation: error-in 180ms ease-out;
+}
+
+.field-error::before {
+  display: grid;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+  margin-top: 0.1rem;
+  border-radius: 50%;
+  background: var(--coral);
+  color: #fff;
+  content: '!';
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.message-error {
+  animation: error-in 180ms ease-out;
+}
+
+@keyframes error-in {
+  from {
+    transform: translateY(-3px);
+    opacity: 0;
+  }
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

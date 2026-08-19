@@ -1,9 +1,14 @@
-import { ChangeDetectionStrategy, Component, signal, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../core/auth.service';
-import { errorMessage } from '../core/error-message';
+import { errorCode, errorMessage, fieldErrors } from '../core/error-message';
+import { currentPasswordError, identifierError } from '../core/field-validation';
+
+type LoginField = 'identifier' | 'password';
+
+const FIELD_ORDER: readonly LoginField[] = ['identifier', 'password'];
 
 @Component({
   imports: [FormsModule, RouterLink],
@@ -26,20 +31,57 @@ import { errorMessage } from '../core/error-message';
       </section>
 
       <section class="auth-panel">
-        <form class="auth-form" (ngSubmit)="submit()">
+        <form class="auth-form" novalidate (ngSubmit)="submit()">
           <div>
             <p class="eyebrow">Chào bạn quay lại</p>
             <h2>Tiếp tục phiên học</h2>
             <p>Dùng email hoặc tên người dùng đã đăng ký.</p>
           </div>
           @if (error()) { <div class="message message-error" role="alert">{{ error() }}</div> }
-          <div class="field">
+          <div class="field" [class.invalid]="shown().identifier || credentialsRejected()">
             <label for="identifier">Email hoặc tên người dùng</label>
-            <input id="identifier" name="identifier" [(ngModel)]="identifier" autocomplete="username" required />
+            <input
+              id="identifier"
+              name="identifier"
+              autocomplete="username"
+              required
+              [ngModel]="identifier()"
+              (ngModelChange)="edit('identifier', $event)"
+              (blur)="touch('identifier')"
+              [attr.aria-invalid]="shown().identifier ? 'true' : null"
+              [attr.aria-describedby]="shown().identifier ? 'identifier-error' : null"
+            />
+            @if (shown().identifier) {
+              <p class="field-error" id="identifier-error">{{ shown().identifier }}</p>
+            }
           </div>
-          <div class="field">
-            <div class="row-between"><label for="password">Mật khẩu</label><span class="hint">Tối thiểu 8 ký tự</span></div>
-            <input id="password" name="password" [(ngModel)]="password" type="password" autocomplete="current-password" required />
+          <div class="field" [class.invalid]="shown().password || credentialsRejected()">
+            <label for="password">Mật khẩu</label>
+            <div class="control">
+              <input
+                id="password"
+                name="password"
+                autocomplete="current-password"
+                required
+                [type]="passwordVisible() ? 'text' : 'password'"
+                [ngModel]="password()"
+                (ngModelChange)="edit('password', $event)"
+                (blur)="touch('password')"
+                [attr.aria-invalid]="shown().password ? 'true' : null"
+                [attr.aria-describedby]="shown().password ? 'password-error' : null"
+              />
+              <button
+                class="reveal"
+                type="button"
+                [attr.aria-pressed]="passwordVisible()"
+                (click)="passwordVisible.set(!passwordVisible())"
+              >
+                {{ passwordVisible() ? 'Ẩn' : 'Hiện' }}
+              </button>
+            </div>
+            @if (shown().password) {
+              <p class="field-error" id="password-error">{{ shown().password }}</p>
+            }
           </div>
           <button class="btn btn-primary submit" type="submit" [disabled]="loading()">
             {{ loading() ? 'Đang đăng nhập…' : 'Đăng nhập' }}
@@ -66,7 +108,6 @@ import { errorMessage } from '../core/error-message';
     .auth-form h2 { margin: 0 0 .45rem; font-size: 2rem; }
     .auth-form p { margin-bottom: 0; }
     .submit { width: 100%; min-height: 48px; margin-top: .25rem; }
-    .hint { color: var(--muted); font-size: .72rem; }
     .switch { text-align: center; }
     .switch a { color: var(--cobalt); font-weight: 750; }
     @media (max-width: 820px) { .auth-page { grid-template-columns: 1fr; } .auth-story { display: none; } .auth-panel { min-height: 100dvh; padding: 1.25rem; } }
@@ -76,21 +117,97 @@ import { errorMessage } from '../core/error-message';
 export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  identifier = '';
-  password = '';
+
+  readonly identifier = signal('');
+  readonly password = signal('');
+  readonly passwordVisible = signal(false);
   readonly loading = signal(false);
   readonly error = signal('');
+  /** Máy chủ đã từ chối cặp thông tin đăng nhập: tô đỏ cả hai ô, không đoán ô nào sai. */
+  readonly credentialsRejected = signal(false);
+
+  private readonly touched = signal<Record<LoginField, boolean>>({
+    identifier: false,
+    password: false,
+  });
+  private readonly submitted = signal(false);
+  private readonly serverErrors = signal<Record<string, string>>({});
+
+  private readonly errors = computed(() => ({
+    identifier: identifierError(this.identifier()) || this.serverErrors()['identifier'] || '',
+    password: currentPasswordError(this.password()) || this.serverErrors()['password'] || '',
+  }));
+
+  /** Chỉ hiện lỗi sau khi người dùng rời ô đó hoặc đã bấm Đăng nhập. */
+  readonly shown = computed(() => {
+    const errors = this.errors();
+    const touched = this.touched();
+    const submitted = this.submitted();
+    return {
+      identifier: touched.identifier || submitted ? errors.identifier : '',
+      password: touched.password || submitted ? errors.password : '',
+    };
+  });
+
+  edit(field: LoginField, value: string): void {
+    if (field === 'identifier') this.identifier.set(value);
+    else this.password.set(value);
+    this.credentialsRejected.set(false);
+    this.error.set('');
+    if (this.serverErrors()[field]) {
+      this.serverErrors.update((current) => ({ ...current, [field]: '' }));
+    }
+  }
+
+  touch(field: LoginField): void {
+    this.touched.update((current) => ({ ...current, [field]: true }));
+  }
 
   submit(): void {
-    if (!this.identifier || !this.password || this.loading()) return;
-    this.loading.set(true);
+    if (this.loading()) return;
+    this.submitted.set(true);
+    this.serverErrors.set({});
+    this.credentialsRejected.set(false);
     this.error.set('');
+
+    const errors = this.errors();
+    const invalid = FIELD_ORDER.find((field) => errors[field]);
+    if (invalid) {
+      this.focus(invalid);
+      return;
+    }
+
+    this.loading.set(true);
     this.auth
-      .login(this.identifier, this.password)
+      .login(this.identifier().trim(), this.password())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: () => void this.router.navigateByUrl('/dashboard'),
-        error: (error) => this.error.set(errorMessage(error)),
+        error: (error: unknown) => this.handleFailure(error),
       });
+  }
+
+  private handleFailure(error: unknown): void {
+    const perField = fieldErrors(error);
+    this.serverErrors.set(perField);
+    this.error.set(errorMessage(error));
+
+    const invalid = FIELD_ORDER.find((field) => perField[field]);
+    if (invalid) {
+      this.focus(invalid);
+      return;
+    }
+    if (errorCode(error) !== 'INVALID_CREDENTIALS') return;
+    // Sai email/tên hoặc mật khẩu: giữ nguyên dữ liệu, chọn sẵn mật khẩu để nhập lại.
+    this.credentialsRejected.set(true);
+    const input = document.getElementById('password');
+    if (input instanceof HTMLInputElement) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  private focus(field: LoginField): void {
+    document.getElementById(field)?.focus();
   }
 }
